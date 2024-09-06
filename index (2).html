@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Cube Adventure</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        .overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="message">Clique para começar sua aventura!</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Configuração básica da cena
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Adicionar um plano de fundo com textura
+        const loader = new THREE.TextureLoader();
+        loader.load('https://www.w3schools.com/w3images/forest.jpg', (texture) => {
+            const backgroundGeometry = new THREE.PlaneGeometry(1000, 1000);
+            const backgroundMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide
+            });
+            const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+            background.position.z = -50; // Colocar o fundo bem atrás do cubo
+            scene.add(background);
+        });
+
+        // Adicionar o chão
+        const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8B4513, // Cor marrom para o chão
+            side: THREE.DoubleSide
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = - Math.PI / 2; // Rotacionar o chão para ficar horizontal
+        scene.add(ground);
+
+        // Adicionar um cubo com cores RGB
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            emissive: 0x00ff00,
+            emissiveIntensity: 0.5
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        // Adicionar iluminação
+        const ambientLight = new THREE.AmbientLight(0x404040); // Luz ambiente
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Luz direcional
+        directionalLight.position.set(5, 5, 5).normalize();
+        scene.add(directionalLight);
+
+        // Adicionar alguns objetos decorativos
+        const createSphere = (color, position) => {
+            const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+            const sphereMaterial = new THREE.MeshStandardMaterial({ color });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.position.set(...position);
+            scene.add(sphere);
+        };
+
+        createSphere(0xff0000, [5, 0, -10]); // Esfera vermelha
+        createSphere(0x0000ff, [-5, 0, -10]); // Esfera azul
+        createSphere(0x00ff00, [0, 0, 10]); // Esfera verde
+
+        // Configurar a posição inicial da câmera
+        camera.position.z = 10;
+
+        // Mensagens da narrativa
+        const messages = [
+            "Bem-vindo à Terra das Maravilhas!",
+            "Você encontra um cubo mágico no meio da paisagem.",
+            "Cada cor representa um poder especial.",
+            "Use WASD para explorar o mundo ao redor do cubo.",
+            "O cubo brilha com uma luz misteriosa.",
+            "Seu objetivo é descobrir o segredo do cubo!",
+            "Pressione qualquer tecla para continuar sua jornada."
+        ];
+        let currentMessageIndex = 0;
+        const messageElement = document.getElementById('message');
+        
+        // Função para atualizar a mensagem
+        function updateMessage() {
+            if (currentMessageIndex < messages.length) {
+                messageElement.textContent = messages[currentMessageIndex];
+                currentMessageIndex++;
+            }
+        }
+
+        // Atualizar a mensagem inicial
+        updateMessage();
+
+        // Função de animação
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Atualizar a rotação do cubo
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+
+            // Atualizar cores RGB
+            const time = Date.now() * 0.001;
+            const r = Math.sin(time) * 0.5 + 0.5;
+            const g = Math.sin(time + Math.PI / 3) * 0.5 + 0.5;
+            const b = Math.sin(time + Math.PI / 1.5) * 0.5 + 0.5;
+            cube.material.color.setRGB(r, g, b);
+
+            renderer.render(scene, camera);
+        }
+
+        // Iniciar a animação
+        animate();
+
+        // Funções para controle do cubo
+        function onKeyDown(event) {
+            switch (event.key) {
+                case 'w':
+                    cube.position.z -= 0.1;
+                    break;
+                case 's':
+                    cube.position.z += 0.1;
+                    break;
+                case 'a':
+                    cube.position.x -= 0.1;
+                    break;
+                case 'd':
+                    cube.position.x += 0.1;
+                    break;
+                case 'q':
+                    cube.position.y += 0.1;
+                    break;
+                case 'e':
+                    cube.position.y -= 0.1;
+                    break;
+            }
+        }
+
+        // Adicionar controle de teclado
+        window.addEventListener('keydown', (event) => {
+            onKeyDown(event);
+            updateMessage(); // Atualiza a mensagem quando uma tecla é pressionada
+        });
+
+        // Ajustar o tamanho do renderizador quando a janela for redimensionada
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+
+    </script>
+</body>
+</html>
+
